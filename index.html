@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#050d1a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Santa Sofía Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#050d1a; --ink2:#0a1628; --ink3:#0f1f38;
+  --border:rgba(0,180,255,0.10); --border2:rgba(0,180,255,0.18);
+  --glass:rgba(14,30,54,0.75);
+  --cyan:#00c8ff; --cyan2:#00e5ff;
+  --cyan-dim:rgba(0,200,255,0.12); --cyan-mid:rgba(0,200,255,0.22);
+  --text:#e8f4ff; --text2:#7da8c8; --text3:#3d6080;
+  --ok:#00e096; --ok-dim:rgba(0,224,150,0.12);
+  --warn:#ffb020; --warn-dim:rgba(255,176,32,0.12);
+  --bad:#ff4d4d; --bad-dim:rgba(255,77,77,0.12);
+  --radius:16px; --radius-sm:10px;
+  --nav-h:70px; --hdr-h:58px;
+  --mono:'Space Mono',monospace; --sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;font-family:var(--sans);background:var(--ink);color:var(--text);overscroll-behavior:none;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(0,200,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+
+/* ── LOADING SCREEN ── */
+#loadingScreen{
+  position:fixed;inset:0;z-index:500;
+  background:var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+}
+.spin-logo{
+  width:72px;height:72px;border-radius:20px;
+  background:linear-gradient(135deg,#004c80,var(--cyan));
+  display:flex;align-items:center;justify-content:center;font-size:32px;
+  box-shadow:0 8px 32px rgba(0,200,255,0.35);
+  animation:pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 8px 32px rgba(0,200,255,0.35);}50%{transform:scale(1.07);box-shadow:0 12px 48px rgba(0,200,255,0.55);}}
+.spin-ring{
+  width:36px;height:36px;border-radius:50%;
+  border:3px solid var(--border2);border-top-color:var(--cyan);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:1px;}
+#syncStatus{font-size:11px;color:var(--text3);margin-top:4px;min-height:16px;}
+
+/* ── LOGIN ── */
+#loginView{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(0,100,180,0.18) 0%,transparent 70%),var(--ink);}
+.login-box{width:min(400px,100%);background:var(--glass);border:1px solid var(--border2);border-radius:24px;padding:28px 24px;backdrop-filter:blur(20px);box-shadow:0 32px 80px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.06);animation:loginDrop .5s cubic-bezier(.34,1.56,.64,1);}
+@keyframes loginDrop{from{opacity:0;transform:translateY(-24px)}to{opacity:1;transform:translateY(0)}}
+.login-brand{text-align:center;margin-bottom:24px;}
+.login-logo{width:64px;height:64px;margin:0 auto 12px;background:linear-gradient(135deg,#004c80,var(--cyan));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 32px rgba(0,200,255,0.3);}
+.login-title{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--cyan);letter-spacing:0.5px;margin:0 0 4px;}
+.login-sub{font-size:12px;color:var(--text2);margin:0;}
+.login-err{background:var(--bad-dim);border:1px solid rgba(255,77,77,0.3);color:var(--bad);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;margin-bottom:14px;display:none;}
+.login-err.show{display:block;animation:shake .3s ease;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.login-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:14px;}
+
+/* ── CLOUD INDICATOR ── */
+.cloud-dot{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:700;letter-spacing:.3px;
+  padding:4px 9px;border-radius:999px;
+}
+.cloud-dot.online{background:var(--ok-dim);color:var(--ok);}
+.cloud-dot.offline{background:var(--warn-dim);color:var(--warn);}
+.cloud-dot.syncing{background:var(--cyan-dim);color:var(--cyan);}
+.dot{width:6px;height:6px;border-radius:50%;}
+.cloud-dot.online .dot{background:var(--ok);box-shadow:0 0 4px var(--ok);}
+.cloud-dot.offline .dot{background:var(--warn);}
+.cloud-dot.syncing .dot{background:var(--cyan);animation:blink .6s ease infinite alternate;}
+@keyframes blink{from{opacity:.3}to{opacity:1}}
+
+/* ── APP SHELL ── */
+#appView{display:none;position:relative;z-index:1;}
+#appView.active{display:flex;flex-direction:column;height:100vh;height:-webkit-fill-available;}
+.app-header{height:var(--hdr-h);flex-shrink:0;background:var(--ink2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 12px;position:relative;z-index:50;}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.hdr-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#004080,var(--cyan));display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 4px 12px rgba(0,200,255,0.25);}
+.hdr-name{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--cyan);}
+.hdr-user{font-size:10px;color:var(--text2);margin-top:1px;}
+.hdr-right{display:flex;gap:5px;align-items:center;}
+.hdr-btn{background:var(--cyan-dim);border:1px solid var(--border2);border-radius:8px;padding:5px 9px;font:inherit;font-size:10px;font-weight:700;color:var(--cyan);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.hdr-btn:active{background:var(--cyan-mid);}
+.hdr-btn.danger{background:var(--bad-dim);border-color:rgba(255,77,77,.3);color:var(--bad);}
+
+#contentArea{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + 12px);}
+
+/* ── BOTTOM NAV ── */
+.b-nav{height:var(--nav-h);flex-shrink:0;background:var(--ink2);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(6,1fr);padding-bottom:env(safe-area-inset-bottom,0);}
+.n-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;position:relative;padding:8px 2px;transition:transform .15s;}
+.n-item:active{transform:scale(.88);}
+.n-icon{font-size:19px;line-height:1;}
+.n-label{font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.3px;white-space:nowrap;}
+.n-item.active .n-label{color:var(--cyan);}
+.n-item.active .n-icon{filter:drop-shadow(0 0 6px var(--cyan));}
+.n-item.active::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:2px;background:var(--cyan);border-radius:0 0 4px 4px;}
+.n-badge{position:absolute;top:6px;right:calc(50% - 17px);background:var(--bad);color:#fff;font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:999px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--ink2);}
+
+/* ── PANELS ── */
+.panel{display:none;padding:14px;animation:fadeUp .22s ease;}
+.panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── COMPONENTS ── */
+.section-title{font-family:var(--mono);font-size:15px;color:var(--cyan);margin:0;}
+.section-sub{font-size:11px;color:var(--text2);margin:2px 0 0;}
+.s-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;}
+.card{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;backdrop-filter:blur(12px);}
+.card-tl{font-size:13px;font-weight:700;color:var(--text2);margin:0 0 12px;display:flex;align-items:center;gap:6px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.stat-c{background:var(--ink3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;position:relative;overflow:hidden;}
+.stat-c::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-c.c1::after{background:linear-gradient(90deg,var(--cyan),#0080c0);}
+.stat-c.c2::after{background:linear-gradient(90deg,var(--ok),#00a060);}
+.stat-c.c3::after{background:linear-gradient(90deg,var(--warn),#cc8000);}
+.stat-c.c4::after{background:linear-gradient(90deg,var(--bad),#cc0000);}
+.stat-c .lbl{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
+.stat-c .val{font-family:var(--mono);font-size:24px;font-weight:700;margin:6px 0 2px;line-height:1;}
+.stat-c .sub{font-size:10px;color:var(--text3);}
+
+.btn{border:none;border-radius:var(--radius-sm);padding:11px 16px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap;}
+.btn:active{transform:scale(.96);}
+.btn-primary{background:linear-gradient(135deg,#005ea0,var(--cyan));color:#fff;width:100%;justify-content:center;box-shadow:0 4px 16px rgba(0,200,255,0.25);}
+.btn-ghost{background:var(--cyan-dim);border:1px solid var(--border2);color:var(--cyan);}
+.btn-ok{background:var(--ok-dim);border:1px solid rgba(0,224,150,.25);color:var(--ok);}
+.btn-bad{background:var(--bad-dim);border:1px solid rgba(255,77,77,.25);color:var(--bad);}
+.btn-warn{background:var(--warn-dim);border:1px solid rgba(255,176,32,.25);color:var(--warn);}
+.btn-sm{padding:6px 11px;font-size:11px;border-radius:7px;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+
+.pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.2px;}
+.pill.ok{background:var(--ok-dim);color:var(--ok);border:1px solid rgba(0,224,150,.2);}
+.pill.warn{background:var(--warn-dim);color:var(--warn);border:1px solid rgba(255,176,32,.2);}
+.pill.bad{background:var(--bad-dim);color:var(--bad);border:1px solid rgba(255,77,77,.2);}
+.pill.info{background:var(--cyan-dim);color:var(--cyan);border:1px solid var(--border2);}
+
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fld{margin-bottom:12px;}
+.fld label,.fld2 label{display:block;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
+.fld input,.fld select,.fld2 input,.fld2 select,.fld2 textarea{width:100%;background:rgba(0,0,0,.35);border:1.5px solid var(--border2);border-radius:var(--radius-sm);padding:11px 13px;font:inherit;font-size:14px;color:var(--text);transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;}
+.fld input:focus,.fld select:focus,.fld2 input:focus,.fld2 select:focus,.fld2 textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,200,255,.1);}
+.fld select option,.fld2 select option{background:#0a1628;}
+.fld2{margin-bottom:12px;}
+.fld2 textarea{min-height:76px;resize:none;}
+
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:420px;}
+th{background:rgba(0,0,0,.3);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);}
+td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(0,200,255,.03);}
+
+.alert-i{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:var(--radius-sm);margin-bottom:8px;border-left:3px solid;}
+.alert-i.warn{background:var(--warn-dim);border-color:var(--warn);}
+.alert-i.ok{background:var(--ok-dim);border-color:var(--ok);}
+.alert-i.bad{background:var(--bad-dim);border-color:var(--bad);}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.alert-body{flex:1;}
+.alert-txt{font-size:13px;font-weight:700;color:var(--text);}
+.alert-sub{font-size:11px;color:var(--text2);margin-top:2px;}
+
+.l-item{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--ink3);margin-bottom:8px;}
+.l-title{font-size:14px;font-weight:700;}
+.l-sub{font-size:11px;color:var(--text2);margin-top:3px;}
+
+.prog{height:6px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden;margin-top:8px;}
+.prog-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--cyan),var(--cyan2));transition:width .5s;}
+.prog-fill.low{background:linear-gradient(90deg,var(--bad),#ff8020);}
+
+.stk-btns{display:flex;gap:5px;align-items:center;margin-top:10px;}
+.stk-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border2);background:rgba(0,0,0,.3);color:var(--text2);font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.stk-btn:active{background:var(--cyan-mid);color:var(--cyan);border-color:var(--cyan);}
+
+.notice{background:var(--cyan-dim);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:var(--cyan);font-weight:600;margin-bottom:12px;}
+.srch{position:relative;margin-bottom:12px;}
+.srch input{padding-left:36px;}
+.srch-ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;}
+
+.q-params{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.q-box{background:var(--ink3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;}
+.q-box .qval{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--cyan);}
+.q-box .qlbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;}
+
+.user-card{background:var(--ink3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.user-avatar{width:42px;height:42px;border-radius:12px;flex-shrink:0;background:linear-gradient(135deg,#004080,var(--cyan));display:flex;align-items:center;justify-content:center;font-size:18px;}
+.user-info{flex:1;}
+.user-name{font-weight:700;font-size:14px;}
+.user-meta{font-size:11px;color:var(--text2);margin-top:2px;}
+
+.m-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.m-dot.ok{background:var(--ok);box-shadow:0 0 6px var(--ok);}
+.m-dot.warn{background:var(--warn);box-shadow:0 0 6px var(--warn);}
+
+.d-hero{background:linear-gradient(135deg,var(--ink3) 0%,rgba(0,80,140,.4) 100%);border:1px solid var(--border2);border-radius:var(--radius);padding:18px;margin-bottom:10px;position:relative;overflow:hidden;}
+.d-hero::before{content:'💧';position:absolute;right:12px;bottom:-6px;font-size:72px;opacity:.07;pointer-events:none;}
+.d-hero-date{font-size:10px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
+.d-hero-title{font-family:var(--mono);font-size:17px;color:var(--cyan);margin:0 0 4px;}
+.d-hero-sub{font-size:12px;color:var(--text2);}
+
+/* toast */
+#toast{position:fixed;bottom:calc(var(--nav-h)+14px);left:50%;transform:translateX(-50%) translateY(12px);background:#0a1628;border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:999px;font-size:12px;font-weight:700;z-index:9999;opacity:0;transition:all .28s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;display:none;align-items:flex-end;backdrop-filter:blur(6px);}
+.modal-overlay.open{display:flex;animation:fadeI .2s ease;}
+@keyframes fadeI{from{opacity:0}to{opacity:1}}
+.modal-sheet{background:var(--ink2);border:1px solid var(--border);border-radius:22px 22px 0 0;padding:20px;width:100%;max-height:88vh;overflow-y:auto;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:32px;height:3px;background:var(--border2);border-radius:999px;margin:0 auto 16px;}
+.modal-title{font-family:var(--mono);font-size:16px;color:var(--cyan);margin:0 0 16px;}
+
+@media(max-width:360px){.form-row{grid-template-columns:1fr;}.stats-grid{grid-template-columns:1fr;}}
+@media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr);}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingScreen">
+  <div class="spin-logo">💧</div>
+  <div class="load-txt">CONECTANDO CON LA NUBE...</div>
+  <div class="spin-ring"></div>
+  <div id="syncStatus">Iniciando Firebase...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginView" style="display:none;">
+  <div class="login-box">
+    <div class="login-brand">
+      <div class="login-logo">💧</div>
+      <div class="login-title">PURIFICADORA SANTA SOFÍA</div>
+      <p class="login-sub">Sistema en la nube · Tiempo real</p>
+    </div>
+    <div id="loginErr" class="login-err"></div>
+    <div class="fld">
+      <label>Usuario</label>
+      <select id="loginUser"></select>
+    </div>
+    <div class="fld">
+      <label>Contraseña</label>
+      <input id="loginPass" type="password" placeholder="••••••" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <button class="btn btn-primary" onclick="login()" style="width:100%;margin-top:4px">Iniciar sesión →</button>
+    <p class="login-hint">Contraseña inicial: <code>1234</code></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appView">
+  <header class="app-header">
+    <div class="hdr-left">
+      <div class="hdr-logo">💧</div>
+      <div>
+        <div class="hdr-name">SANTA SOFÍA PRO</div>
+        <div class="hdr-user" id="hdrUser"></div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="cloud-dot online" id="cloudDot"><div class="dot"></div><span id="cloudTxt">EN LÍNEA</span></div>
+      <button class="hdr-btn danger" onclick="logout()">✕ Salir</button>
+    </div>
+  </header>
+
+  <div id="contentArea">
+
+    <!-- DASHBOARD -->
+    <div id="p-dashboard" class="panel active">
+      <div class="d-hero">
+        <div class="d-hero-date" id="dDate"></div>
+        <div class="d-hero-title">Purificadora Santa Sofía</div>
+        <div class="d-hero-sub" id="dSub"></div>
+      </div>
+      <div class="stats-grid" id="dStats"></div>
+      <div class="card"><div class="card-tl">⚡ Alertas del sistema</div><div id="dAlerts"></div></div>
+      <div class="card"><div class="card-tl">🧪 Último registro de calidad</div><div id="dQuality"></div></div>
+    </div>
+
+    <!-- PEDIDOS -->
+    <div id="p-orders" class="panel">
+      <div class="s-head">
+        <div><div class="section-title">Pedidos</div><div class="section-sub">Sincronizados en tiempo real</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('m-order')">+ Nuevo</button>
+      </div>
+      <div class="srch"><span class="srch-ic">🔍</span><input id="orderSearch" placeholder="Buscar cliente o teléfono..." oninput="renderOrders()"></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Cliente</th><th>Garr.</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="ordersBody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- CALIDAD -->
+    <div id="p-quality" class="panel">
+      <div class="s-head">
+        <div><div class="section-title">Calidad del Agua</div><div class="section-sub">pH · TDS · Ozono · UV</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('m-quality')">+ Registro</button>
+      </div>
+      <div class="notice">📌 Los registros se guardan en la nube y son visibles para todo el equipo.</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Fecha</th><th>pH</th><th>TDS</th><th>Ozono</th><th>UV</th><th>Obs.</th><th>Op.</th><th></th></tr></thead>
+        <tbody id="qualityBody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- MANTENIMIENTO -->
+    <div id="p-maintenance" class="panel">
+      <div class="s-head">
+        <div><div class="section-title">Mantenimiento</div><div class="section-sub">Preventivo y correctivo</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('m-maintenance')">+ Agregar</button>
+      </div>
+      <div id="maintList"></div>
+    </div>
+
+    <!-- INVENTARIO -->
+    <div id="p-inventory" class="panel">
+      <div class="s-head">
+        <div><div class="section-title">Inventario</div><div class="section-sub">Stock en tiempo real</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('m-inventory')">+ Artículo</button>
+      </div>
+      <div id="inventoryGrid"></div>
+    </div>
+
+    <!-- USUARIOS -->
+    <div id="p-users" class="panel">
+      <div class="s-head">
+        <div><div class="section-title">Usuarios</div><div class="section-sub">Hasta 3 cuentas activas</div></div>
+        <button class="btn btn-ghost btn-sm" id="btnAddUser" onclick="openModal('m-user')">+ Agregar</button>
+      </div>
+      <div id="usersList"></div>
+    </div>
+
+  </div>
+
+  <nav class="b-nav">
+    <button class="n-item active" onclick="showTab('dashboard',this)"><div class="n-icon">⚡</div><div class="n-label">Panel</div></button>
+    <button class="n-item" onclick="showTab('orders',this)">
+      <div class="n-icon">📋</div><div class="n-label">Pedidos</div>
+      <div class="n-badge" id="pendBadge" style="display:none">0</div>
+    </button>
+    <button class="n-item" onclick="showTab('quality',this)"><div class="n-icon">🧪</div><div class="n-label">Calidad</div></button>
+    <button class="n-item" onclick="showTab('maintenance',this)"><div class="n-icon">🔧</div><div class="n-label">Mant.</div></button>
+    <button class="n-item" onclick="showTab('inventory',this)"><div class="n-icon">📦</div><div class="n-label">Inventario</div></button>
+    <button class="n-item" id="navUsers" onclick="showTab('users',this)"><div class="n-icon">👥</div><div class="n-label">Usuarios</div></button>
+  </nav>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="m-order">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📋 Nuevo pedido</div>
+    <div class="form-row">
+      <div class="fld2"><label>Cliente *</label><input id="o_customer" placeholder="Nombre"></div>
+      <div class="fld2"><label>Teléfono *</label><input id="o_phone" type="tel" placeholder="871 000 0000"></div>
+    </div>
+    <div class="fld2"><label>Dirección</label><input id="o_address" placeholder="Calle, colonia..."></div>
+    <div class="form-row">
+      <div class="fld2"><label>Garrafones</label><input id="o_qty" type="number" value="1" min="1"></div>
+      <div class="fld2"><label>Total ($)</label><input id="o_total" type="number" value="18"></div>
+    </div>
+    <div class="fld2"><label>Notas</label><input id="o_notes" placeholder="Observaciones..."></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addOrder()">☁ Guardar en nube</button>
+      <button class="btn btn-bad" onclick="closeModal('m-order')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-quality">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🧪 Registro de calidad</div>
+    <div class="form-row">
+      <div class="fld2"><label>pH *</label><input id="q_ph" type="number" step="0.01" placeholder="7.2"></div>
+      <div class="fld2"><label>TDS *</label><input id="q_tds" type="number" placeholder="18"></div>
+    </div>
+    <div class="form-row">
+      <div class="fld2"><label>Ozono</label><select id="q_ozono"><option>Sí</option><option>No</option></select></div>
+      <div class="fld2"><label>UV</label><select id="q_uv"><option>Operando</option><option>Falla</option><option>Revisión</option></select></div>
+    </div>
+    <div class="fld2"><label>Observaciones</label><input id="q_obs" placeholder="Parámetros dentro de rango..."></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addQuality()">☁ Guardar en nube</button>
+      <button class="btn btn-bad" onclick="closeModal('m-quality')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-maintenance">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔧 Registrar mantenimiento</div>
+    <div class="form-row">
+      <div class="fld2"><label>Equipo *</label><input id="m_equipo" placeholder="Lámpara UV / Bomba"></div>
+      <div class="fld2"><label>Tipo</label><select id="m_tipo"><option>Preventivo</option><option>Correctivo</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="fld2"><label>Estatus</label><select id="m_status"><option>Pendiente</option><option>Hecho</option></select></div>
+      <div class="fld2"><label>Próxima revisión</label><input id="m_proximo" type="date"></div>
+    </div>
+    <div class="form-row">
+      <div class="fld2"><label>Costo ($)</label><input id="m_costo" type="number" value="0"></div>
+      <div class="fld2"><label>Descripción *</label><input id="m_desc" placeholder="Qué se hizo..."></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addMaintenance()">☁ Guardar en nube</button>
+      <button class="btn btn-bad" onclick="closeModal('m-maintenance')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-inventory">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📦 Nuevo artículo</div>
+    <div class="fld2"><label>Artículo *</label><input id="i_item" placeholder="Nombre del insumo"></div>
+    <div class="form-row">
+      <div class="fld2"><label>Stock actual</label><input id="i_stock" type="number" placeholder="0"></div>
+      <div class="fld2"><label>Stock mínimo</label><input id="i_min" type="number" placeholder="0"></div>
+      <div class="fld2"><label>Unidad</label><input id="i_unit" value="pzas"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addInventory()">☁ Guardar en nube</button>
+      <button class="btn btn-bad" onclick="closeModal('m-inventory')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-user">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👥 Nuevo usuario</div>
+    <div class="notice">⚠️ Máximo 3 usuarios activos.</div>
+    <div class="form-row">
+      <div class="fld2"><label>Usuario *</label><input id="u_username" placeholder="usuario123"></div>
+      <div class="fld2"><label>Nombre visible *</label><input id="u_name" placeholder="Ricardo López"></div>
+    </div>
+    <div class="form-row">
+      <div class="fld2"><label>Contraseña *</label><input id="u_pass" type="password" placeholder="••••••"></div>
+      <div class="fld2"><label>Rol</label><select id="u_role"><option>Operador</option><option>Admin</option></select></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addUser()">☁ Crear usuario</button>
+      <button class="btn btn-bad" onclick="closeModal('m-user')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ═══════════════ FIREBASE + SCRIPT ═══════════════ -->
+<script type="module">
+import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, getDocs, addDoc, setDoc, deleteDoc, onSnapshot, updateDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ── CONFIG ──
+const firebaseConfig = {
+  apiKey: "AIzaSyDhcxvrXCzB0unmc795Xq9qtld86ayG3os",
+  authDomain: "purificadora-santa-sofia.firebaseapp.com",
+  projectId: "purificadora-santa-sofia",
+  storageBucket: "purificadora-santa-sofia.firebasestorage.app",
+  messagingSenderId: "882086636956",
+  appId: "1:882086636956:web:e88f0344a9a1b518242c59"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── HELPERS ──
+const $      = id => document.getElementById(id);
+const money  = new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0});
+const today  = () => new Date().toISOString().slice(0,10);
+const fmtD   = s => { try{ return new Date(s+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'short'}); }catch(e){return s;} };
+const fmtDL  = s => { try{ return new Date(s+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}); }catch(e){return s;} };
+const esc    = v => String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+const val    = id => $(id)?.value ?? '';
+const setSync = (mode,txt) => {
+  const d=$('cloudDot'),t=$('cloudTxt');
+  d.className='cloud-dot '+mode; t.textContent=txt;
+};
+
+let currentUser = null;
+let cache = { users:[], orders:[], quality:[], maintenance:[], inventory:[] };
+let unsubs = [];
+
+// ── LOADING ──
+function setSyncStatus(txt){ $('syncStatus').textContent = txt; }
+
+// ── SEED default users if collection empty ──
+async function ensureDefaultUsers(){
+  setSyncStatus('Verificando usuarios...');
+  const snap = await getDocs(collection(db,'users'));
+  if(snap.empty){
+    setSyncStatus('Creando usuarios iniciales...');
+    const defaults = [
+      {username:'admin',   password:'1234',name:'Administrador',role:'Admin',   active:true},
+      {username:'operador1',password:'1234',name:'Operador 1',  role:'Operador',active:true},
+      {username:'operador2',password:'1234',name:'Operador 2',  role:'Operador',active:true},
+    ];
+    for(const u of defaults){
+      await setDoc(doc(db,'users',u.username), u);
+    }
+  }
+}
+
+async function ensureDefaultInventory(){
+  const snap = await getDocs(collection(db,'inventory'));
+  if(snap.empty){
+    const items = [
+      {item:'Garrafones disponibles',stock:78,min:30,unit:'pzas'},
+      {item:'Tapas',stock:450,min:150,unit:'pzas'},
+      {item:'Sellos',stock:380,min:120,unit:'pzas'},
+      {item:'Filtro sedimentos',stock:3,min:2,unit:'pzas'},
+    ];
+    for(const i of items){
+      await addDoc(collection(db,'inventory'), i);
+    }
+  }
+}
+
+// ── REAL-TIME LISTENERS ──
+function startListeners(){
+  unsubs.forEach(u=>u()); unsubs=[];
+
+  const listen = (col, key, sortFn) => {
+    const u = onSnapshot(
+      collection(db, col),
+      { includeMetadataChanges: false },
+      snap => {
+        // Only update from server, ignore local pending writes
+        if(snap.metadata.fromCache) return;
+        cache[key] = snap.docs.map(d=>({...d.data(), _id:d.id}));
+        if(sortFn) cache[key].sort(sortFn);
+        renderAll();
+      },
+      err => { console.warn(col, err); }
+    );
+    unsubs.push(u);
+  };
+
+  listen('users',       'users',       (a,b)=>a.username?.localeCompare(b.username));
+  listen('orders',      'orders',      (a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  listen('quality',     'quality',     (a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  listen('maintenance', 'maintenance', (a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  listen('inventory',   'inventory',   (a,b)=>a.item?.localeCompare(b.item));
+}
+
+// ── CONNECTIVITY ──
+window.addEventListener('online',  () => setSync('online','EN LÍNEA'));
+window.addEventListener('offline', () => setSync('offline','SIN INTERNET'));
+
+// ── AUTH ──
+function refreshLoginUsers(){
+  $('loginUser').innerHTML = cache.users.filter(u=>u.active).map(u=>`<option value="${esc(u.username)}">${esc(u.name)} (${esc(u.username)})</option>`).join('');
+}
+window.login = function(){
+  const username = val('loginUser');
+  const password = val('loginPass');
+  const user = cache.users.find(u=>u.username===username && u.active);
+  if(!user || user.password !== password){
+    const e=$('loginErr'); e.textContent='Usuario o contraseña incorrectos'; e.className='login-err show'; return;
+  }
+  currentUser = user;
+  $('loginPass').value=''; $('loginErr').className='login-err';
+  $('loginView').style.display='none';
+  $('appView').className='active';
+  renderAll();
+};
+window.logout = function(){
+  unsubs.forEach(u=>u()); unsubs=[];
+  currentUser=null;
+  $('appView').className='';
+  $('loginView').style.display='flex';
+  refreshLoginUsers();
+};
+
+// ── TABS / MODALS ──
+window.showTab = function(tab,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.n-item').forEach(n=>n.classList.remove('active'));
+  $('p-'+tab).classList.add('active');
+  if(el) el.classList.add('active');
+  $('contentArea').scrollTop=0;
+};
+window.openModal  = id => $(id).classList.add('open');
+window.closeModal = id => $(id).classList.remove('open');
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ── TOAST ──
+let toastT;
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// ── RENDER ALL ──
+function renderAll(){
+  if(!currentUser) return;
+  $('hdrUser').textContent = currentUser.name + ' · ' + currentUser.role;
+  $('navUsers').style.display = currentUser.role==='Admin' ? '' : 'none';
+  refreshLoginUsers();
+  renderDashboard(); renderOrders(); renderQuality();
+  renderMaintenance(); renderInventory(); renderUsers();
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const pending   = cache.orders.filter(o=>o.status==='Pendiente').length;
+  const sales     = cache.orders.reduce((a,b)=>a+Number(b.total||0),0);
+  const lowInv    = cache.inventory.filter(i=>Number(i.stock)<=Number(i.min));
+  const dueMaint  = cache.maintenance.filter(m=>m.status==='Pendiente');
+  const lastQ     = cache.quality[0];
+  const todayOrds = cache.orders.filter(o=>o.date===today()).length;
+
+  $('dDate').textContent = '📅 ' + fmtDL(today()).toUpperCase();
+  $('dSub').textContent  = 'Universidad de Salamanca 700, Col. Tajito';
+
+  const pb=$('pendBadge');
+  if(pending>0){pb.textContent=pending;pb.style.display='flex';}else pb.style.display='none';
+
+  $('dStats').innerHTML=[
+    ['c1','Pedidos hoy',todayOrds,`${pending} pend.`],
+    ['c2','Ventas',money.format(sales),'Acumulado'],
+    ['c3','Último pH',lastQ?lastQ.ph:'—',lastQ?`TDS ${lastQ.tds}`:'Sin datos'],
+    ['c4','Mant. pend.',dueMaint.length,'Por atender'],
+  ].map(([c,l,v,s])=>`<div class="stat-c ${c}"><div class="lbl">${l}</div><div class="val">${v}</div><div class="sub">${s}</div></div>`).join('');
+
+  let alerts='';
+  if(lowInv.length) alerts+=lowInv.map(i=>`<div class="alert-i warn"><div class="alert-icon">⚠️</div><div class="alert-body"><div class="alert-txt">Stock bajo: ${esc(i.item)}</div><div class="alert-sub">${i.stock} ${i.unit} · mín ${i.min}</div></div><span class="pill warn">Reponer</span></div>`).join('');
+  if(dueMaint.length) alerts+=`<div class="alert-i warn"><div class="alert-icon">🔧</div><div class="alert-body"><div class="alert-txt">Mantenimientos pendientes: ${dueMaint.length}</div><div class="alert-sub">Revisa el módulo de mantenimiento</div></div></div>`;
+  if(!alerts) alerts=`<div class="alert-i ok"><div class="alert-icon">✅</div><div class="alert-body"><div class="alert-txt">Todo en orden</div><div class="alert-sub">Sin alertas críticas</div></div></div>`;
+  $('dAlerts').innerHTML=alerts;
+
+  $('dQuality').innerHTML = lastQ ? `
+    <div class="q-params">
+      <div class="q-box"><div class="qval">${esc(lastQ.ph)}</div><div class="qlbl">pH</div></div>
+      <div class="q-box"><div class="qval">${esc(lastQ.tds)}</div><div class="qlbl">TDS ppm</div></div>
+      <div class="q-box"><div class="qval" style="font-size:14px">${esc(lastQ.ozono)}</div><div class="qlbl">Ozono</div></div>
+      <div class="q-box"><div class="qval" style="font-size:13px">${esc(lastQ.uv)}</div><div class="qlbl">UV</div></div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--text2)">Registrado: ${fmtD(lastQ.date)} por ${esc(lastQ.createdBy)}</div>`
+  : `<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Sin registros aún</div>`;
+}
+
+// ── ORDERS ──
+window.addOrder = async function(){
+  setSync('syncing','GUARDANDO...');
+  const o = {
+    date:today(), createdAt:new Date().toISOString(),
+    customer:val('o_customer').trim(), phone:val('o_phone').trim(),
+    address:val('o_address').trim(), garrafones:Number(val('o_qty')||1),
+    total:Number(val('o_total')||0), status:'Pendiente',
+    notes:val('o_notes').trim(), createdBy:currentUser.username
+  };
+  if(!o.customer||!o.phone){ toast('⚠️ Cliente y teléfono requeridos'); setSync('online','EN LÍNEA'); return; }
+  await addDoc(collection(db,'orders'), o);
+  ['o_customer','o_phone','o_address','o_notes'].forEach(id=>$(id).value='');
+  $('o_qty').value=1; $('o_total').value=18;
+  closeModal('m-order'); setSync('online','EN LÍNEA'); toast('✅ Pedido guardado en la nube');
+};
+window.completeOrder = async function(id){
+  setSync('syncing','ACTUALIZANDO...');
+  await updateDoc(doc(db,'orders',id),{status:'Completado'});
+  setSync('online','EN LÍNEA'); toast('✅ Pedido completado');
+};
+window.deleteOrder = async function(id){
+  if(!confirm('¿Borrar este pedido?')) return;
+  await deleteDoc(doc(db,'orders',id)); toast('Pedido eliminado');
+};
+function renderOrders(){
+  const q=val('orderSearch').trim().toLowerCase();
+  const rows=cache.orders.filter(o=>!q||[o.customer,o.phone,o.address].join(' ').toLowerCase().includes(q));
+  $('ordersBody').innerHTML = rows.length ? rows.map(o=>`<tr>
+    <td><b style="font-size:13px">${esc(o.customer)}</b><br><span style="font-size:10px;color:var(--text3)">${esc(o.phone)}</span></td>
+    <td style="font-family:var(--mono);font-weight:700">${o.garrafones}</td>
+    <td style="font-family:var(--mono)">${money.format(o.total)}</td>
+    <td><span class="pill ${o.status==='Completado'?'ok':'warn'}">${o.status}</span></td>
+    <td>
+      ${o.status!=='Completado'?`<button class="btn btn-ok btn-sm" onclick="completeOrder('${o._id}')">✓</button> `:''}
+      <button class="btn btn-bad btn-sm" onclick="deleteOrder('${o._id}')">✕</button>
+    </td>
+  </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px;font-size:12px">Sin pedidos registrados</td></tr>';
+}
+
+// ── QUALITY ──
+window.addQuality = async function(){
+  const ph=val('q_ph'),tds=val('q_tds');
+  if(!ph||!tds){ toast('⚠️ pH y TDS requeridos'); return; }
+  setSync('syncing','GUARDANDO...');
+  await addDoc(collection(db,'quality'),{
+    date:today(), createdAt:new Date().toISOString(),
+    ph, tds, ozono:val('q_ozono'), uv:val('q_uv'),
+    obs:val('q_obs'), createdBy:currentUser.username
+  });
+  ['q_ph','q_tds','q_obs'].forEach(id=>$(id).value='');
+  closeModal('m-quality'); setSync('online','EN LÍNEA'); toast('✅ Registro guardado en la nube');
+};
+window.deleteQuality = async function(id){
+  if(!confirm('¿Borrar este registro?')) return;
+  await deleteDoc(doc(db,'quality',id)); toast('Registro eliminado');
+};
+function renderQuality(){
+  $('qualityBody').innerHTML = cache.quality.length ? cache.quality.map(q=>`<tr>
+    <td>${fmtD(q.date)}</td>
+    <td style="font-family:var(--mono);font-weight:700;color:var(--cyan)">${esc(q.ph)}</td>
+    <td style="font-family:var(--mono)">${esc(q.tds)}</td>
+    <td><span class="pill ${q.ozono==='Sí'?'ok':'bad'}">${esc(q.ozono)}</span></td>
+    <td><span class="pill ${q.uv==='Operando'?'ok':'warn'}">${esc(q.uv)}</span></td>
+    <td style="color:var(--text2);font-size:11px">${esc(q.obs)}</td>
+    <td style="font-size:11px;color:var(--text3)">${esc(q.createdBy)}</td>
+    <td><button class="btn btn-bad btn-sm" onclick="deleteQuality('${q._id}')">✕</button></td>
+  </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:24px;font-size:12px">Sin registros de calidad</td></tr>';
+}
+
+// ── MAINTENANCE ──
+window.addMaintenance = async function(){
+  const equipo=val('m_equipo').trim(), desc=val('m_desc').trim();
+  if(!equipo||!desc){ toast('⚠️ Equipo y descripción requeridos'); return; }
+  setSync('syncing','GUARDANDO...');
+  await addDoc(collection(db,'maintenance'),{
+    date:today(), createdAt:new Date().toISOString(),
+    equipo, tipo:val('m_tipo'), status:val('m_status'),
+    proximo:val('m_proximo'), costo:val('m_costo')||'0',
+    descripcion:desc, createdBy:currentUser.username
+  });
+  ['m_equipo','m_desc','m_costo','m_proximo'].forEach(id=>$(id).value='');
+  closeModal('m-maintenance'); setSync('online','EN LÍNEA'); toast('✅ Mantenimiento guardado');
+};
+window.completeMaint = async function(id){
+  setSync('syncing','ACTUALIZANDO...');
+  await updateDoc(doc(db,'maintenance',id),{status:'Hecho'});
+  setSync('online','EN LÍNEA'); toast('✅ Marcado como hecho');
+};
+window.deleteMaint = async function(id){
+  if(!confirm('¿Borrar este registro?')) return;
+  await deleteDoc(doc(db,'maintenance',id)); toast('Registro eliminado');
+};
+function renderMaintenance(){
+  $('maintList').innerHTML = cache.maintenance.length ? cache.maintenance.map(m=>`
+    <div class="l-item">
+      <div class="m-dot ${m.status==='Hecho'?'ok':'warn'}"></div>
+      <div style="flex:1">
+        <div class="l-title">${esc(m.equipo)}</div>
+        <div class="l-sub">${esc(m.descripcion)} · ${esc(m.tipo)}</div>
+        ${m.proximo?`<div style="font-size:10px;color:var(--text3);margin-top:3px">Próximo: ${fmtD(m.proximo)}</div>`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <span class="pill ${m.status==='Hecho'?'ok':'warn'}">${m.status}</span>
+        ${Number(m.costo)>0?`<div style="font-size:11px;font-family:var(--mono);color:var(--text2);margin-top:4px">${money.format(m.costo)}</div>`:''}
+        <div style="margin-top:6px;display:flex;gap:5px;justify-content:flex-end">
+          ${m.status!=='Hecho'?`<button class="btn btn-ok btn-sm" onclick="completeMaint('${m._id}')">✓</button>`:''}
+          <button class="btn btn-bad btn-sm" onclick="deleteMaint('${m._id}')">✕</button>
+        </div>
+      </div>
+    </div>`).join('') : '<div style="text-align:center;color:var(--text3);padding:32px;font-size:13px">Sin registros de mantenimiento</div>';
+}
+
+// ── INVENTORY ──
+window.addInventory = async function(){
+  const item=val('i_item').trim();
+  if(!item){ toast('⚠️ Nombre del artículo requerido'); return; }
+  setSync('syncing','GUARDANDO...');
+  await addDoc(collection(db,'inventory'),{
+    item, stock:Number(val('i_stock')||0),
+    min:Number(val('i_min')||0), unit:val('i_unit')||'pzas'
+  });
+  ['i_item','i_stock','i_min'].forEach(id=>$(id).value=''); $('i_unit').value='pzas';
+  closeModal('m-inventory'); setSync('online','EN LÍNEA'); toast('✅ Artículo guardado');
+};
+window.adjustStock = async function(id, delta){
+  const item = cache.inventory.find(x=>x._id===id); if(!item) return;
+  const newStock = Math.max(0, Number(item.stock)+delta);
+  await updateDoc(doc(db,'inventory',id),{stock:newStock});
+};
+window.deleteInventory = async function(id){
+  if(!confirm('¿Borrar este artículo?')) return;
+  await deleteDoc(doc(db,'inventory',id)); toast('Artículo eliminado');
+};
+function renderInventory(){
+  $('inventoryGrid').innerHTML = cache.inventory.length ? cache.inventory.map(i=>{
+    const low=Number(i.stock)<=Number(i.min);
+    const pct=Math.max(4,Math.min(100,Math.round((Number(i.stock)/Math.max(Number(i.min)*2,1))*100)));
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div>
+          <div style="font-weight:700;font-size:14px">${esc(i.item)}</div>
+          <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--cyan);margin:6px 0 2px;line-height:1">${i.stock} <span style="font-size:12px;color:var(--text2)">${esc(i.unit)}</span></div>
+          <div style="font-size:10px;color:var(--text3)">Mínimo: ${i.min} ${esc(i.unit)}</div>
+        </div>
+        <span class="pill ${low?'warn':'ok'}">${low?'⚠ Reponer':'✓ OK'}</span>
+      </div>
+      <div class="prog"><div class="prog-fill ${low?'low':''}" style="width:${pct}%"></div></div>
+      <div class="stk-btns">
+        <button class="stk-btn" onclick="adjustStock('${i._id}',-5)">-5</button>
+        <button class="stk-btn" onclick="adjustStock('${i._id}',-1)">-1</button>
+        <span style="flex:1;text-align:center;font-size:10px;color:var(--text3)">ajustar</span>
+        <button class="stk-btn" onclick="adjustStock('${i._id}',1)">+1</button>
+        <button class="stk-btn" onclick="adjustStock('${i._id}',5)">+5</button>
+        <button class="btn btn-bad btn-sm" onclick="deleteInventory('${i._id}')" style="margin-left:4px">✕</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="text-align:center;color:var(--text3);padding:32px;font-size:13px">Sin artículos en inventario</div>';
+}
+
+// ── USERS ──
+window.addUser = async function(){
+  if(cache.users.filter(u=>u.active).length>=3){ toast('⚠️ Máximo 3 usuarios activos'); return; }
+  const username=val('u_username').trim(), name=val('u_name').trim(), password=val('u_pass');
+  if(!username||!name||!password){ toast('⚠️ Completa todos los campos'); return; }
+  if(cache.users.some(u=>u.username===username)){ toast('⚠️ Ese usuario ya existe'); return; }
+  setSync('syncing','GUARDANDO...');
+  await setDoc(doc(db,'users',username),{username,password,name,role:val('u_role'),active:true});
+  ['u_username','u_name','u_pass'].forEach(id=>$(id).value='');
+  closeModal('m-user'); setSync('online','EN LÍNEA'); toast('✅ Usuario creado');
+};
+window.toggleUser = async function(username){
+  const u=cache.users.find(x=>x.username===username); if(!u) return;
+  if(!u.active && cache.users.filter(x=>x.active).length>=3){ toast('⚠️ Máximo 3 usuarios activos'); return; }
+  await updateDoc(doc(db,'users',username),{active:!u.active});
+  toast(u.active?'Usuario desactivado':'✅ Usuario activado');
+};
+window.deleteUser = async function(username){
+  if(username===currentUser.username){ toast('⚠️ No puedes borrar tu propio usuario'); return; }
+  if(!confirm('¿Borrar este usuario?')) return;
+  await deleteDoc(doc(db,'users',username)); toast('Usuario eliminado');
+};
+function renderUsers(){
+  if(currentUser.role!=='Admin'){
+    $('usersList').innerHTML='<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px">Solo el administrador puede ver esta sección.</div>';
+    $('btnAddUser').style.display='none'; return;
+  }
+  $('btnAddUser').style.display='';
+  $('usersList').innerHTML = cache.users.map(u=>`
+    <div class="user-card">
+      <div class="user-avatar">${u.role==='Admin'?'🛡':'⚙'}</div>
+      <div class="user-info">
+        <div class="user-name">${esc(u.name)}</div>
+        <div class="user-meta">${esc(u.username)} · <span class="pill ${u.role==='Admin'?'info':'ok'}" style="font-size:9px;padding:2px 7px">${u.role}</span> <span class="pill ${u.active?'ok':'bad'}" style="font-size:9px;padding:2px 7px">${u.active?'Activo':'Inactivo'}</span></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-warn btn-sm" onclick="toggleUser('${u.username}')">${u.active?'Desact.':'Activar'}</button>
+        ${u.username!==currentUser.username?`<button class="btn btn-bad btn-sm" onclick="deleteUser('${u.username}')">✕</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+// ── INIT ──
+try {
+  setSyncStatus('Conectando a Firebase...');
+  await ensureDefaultUsers();
+  await ensureDefaultInventory();
+  setSyncStatus('Cargando datos del servidor...');
+  startListeners();
+  // Wait for first real server snapshot (up to 5 seconds)
+  await new Promise(r => setTimeout(r, 2000));
+  $('loadingScreen').style.display='none';
+  $('loginView').style.display='flex';
+  refreshLoginUsers();
+  setSync('online','EN LÍNEA');
+} catch(err){
+  $('syncStatus').textContent = '❌ Error: ' + err.message;
+  console.error(err);
+}
+</script>
+</body>
+</html>
